@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプル ToDo リスト</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icon CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .task-enter {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col justify-between text-slate-800 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- メインコンテンツ -->
+    <main class="w-full max-w-2xl mx-auto px-4 py-8 md:py-12 flex-grow">
+        <!-- ヘッダー -->
+        <header class="mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">
+                    <i class="fa-solid fa-check-double text-indigo-600 mr-2"></i>ToDo List
+                </h1>
+                <p class="text-sm text-slate-500 mt-1" id="current-date">日付を読み込んでいます...</p>
+            </div>
+            <!-- 進捗メーター -->
+            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-3">
+                <div class="relative w-12 h-12 flex items-center justify-center">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        <path class="text-slate-100" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <path id="progress-circle" class="text-indigo-600 transition-all duration-500 ease-out" stroke-dasharray="0, 100" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    </svg>
+                    <span id="progress-percent" class="absolute text-xs font-bold text-slate-700">0%</span>
+                </div>
+                <div class="text-xs">
+                    <p class="font-semibold text-slate-700" id="progress-text">0 / 0 完了</p>
+                    <p class="text-slate-400" id="motivational-msg">今日もがんばりましょう！</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- 入力エリア -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 mb-6">
+            <form id="todo-form" class="space-y-3">
+                <div class="flex gap-2">
+                    <input 
+                        type="text" 
+                        id="todo-input" 
+                        placeholder="新しいタスクを入力..." 
+                        required
+                        class="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm bg-slate-50/50 focus:bg-white placeholder-slate-400"
+                    >
+                    <button 
+                        type="submit" 
+                        class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition-all shadow-md shadow-indigo-100 active:scale-95 flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                    >
+                        <i class="fa-solid fa-plus text-xs"></i> 追加
+                    </button>
+                </div>
+                
+                <!-- 優先度とカテゴリーの追加オプション -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100 text-xs">
+                    <div class="flex items-center gap-2 text-slate-500">
+                        <span>優先度:</span>
+                        <label class="cursor-pointer inline-flex items-center">
+                            <input type="radio" name="priority" value="low" class="sr-only peer">
+                            <span class="px-2.5 py-1 rounded-lg border border-slate-200 peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 transition-all">低</span>
+                        </label>
+                        <label class="cursor-pointer inline-flex items-center">
+                            <input type="radio" name="priority" value="medium" checked class="sr-only peer">
+                            <span class="px-2.5 py-1 rounded-lg border border-slate-200 peer-checked:bg-amber-50 peer-checked:border-amber-500 peer-checked:text-amber-700 transition-all">中</span>
+                        </label>
+                        <label class="cursor-pointer inline-flex items-center">
+                            <input type="radio" name="priority" value="high" class="sr-only peer">
+                            <span class="px-2.5 py-1 rounded-lg border border-slate-200 peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-700 transition-all">高</span>
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- フィルターとアクション -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+            <!-- フィルタータブ -->
+            <div class="flex p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto text-xs font-medium">
+                <button data-filter="all" class="filter-btn flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-slate-600 transition-all active-filter">すべて</button>
+                <button data-filter="active" class="filter-btn flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-slate-600 transition-all">未完了</button>
+                <button data-filter="completed" class="filter-btn flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-slate-600 transition-all">完了済み</button>
+            </div>
+
+            <!-- 全削除ボタンなど -->
+            <button id="clear-completed" class="text-xs text-slate-400 hover:text-rose-600 transition-colors flex items-center gap-1">
+                <i class="fa-regular fa-trash-can"></i> 完了済みを消去
+            </button>
+        </div>
+
+        <!-- タスクリスト -->
+        <ul id="todo-list" class="space-y-2.5">
+            <!-- JavaScriptで動的に生成されます -->
+        </ul>
+
+        <!-- 空の状態 -->
+        <div id="empty-state" class="hidden text-center py-12 px-4 bg-white/60 rounded-2xl border border-dashed border-slate-200 mt-2">
+            <div class="w-12 h-12 bg-indigo-50 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <p class="text-slate-600 font-medium text-sm" id="empty-title">タスクはありません</p>
+            <p class="text-slate-400 text-xs mt-1" id="empty-desc">新しいタスクを追加して一日をスタートしましょう！</p>
+        </div>
+    </main>
+
+    <!-- フッター -->
+    <footer class="text-center py-4 text-xs text-slate-400 border-t border-slate-200/60">
+        <p>Simple ToDo App &copy; Local Storage Enabled</p>
+    </footer>
+
+    <!-- JavaScript ロジック -->
+    <script>
+        // DOM要素の取得
+        const todoForm = document.getElementById('todo-form');
+        const todoInput = document.getElementById('todo-input');
+        const todoList = document.getElementById('todo-list');
+        const emptyState = document.getElementById('empty-state');
+        const currentDateEl = document.getElementById('current-date');
+        const progressPercent = document.getElementById('progress-percent');
+        const progressCircle = document.getElementById('progress-circle');
+        const progressText = document.getElementById('progress-text');
+        const motivationalMsg = document.getElementById('motivational-msg');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const clearCompletedBtn = document.getElementById('clear-completed');
+
+        // アプリケーションの状態
+        let todos = JSON.parse(localStorage.getItem('todos')) || [];
+        let currentFilter = 'all';
+
+        // 初期化処理
+        function init() {
+            displayDate();
+            renderTodos();
+            setupEventListeners();
+        }
+
+        // 日付の表示
+        function displayDate() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' };
+            currentDateEl.textContent = now.toLocaleDateString('ja-JP', options);
+        }
+
+        // イベントリスナーの設定
+        function setupEventListeners() {
+            // タスク追加
+            todoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const title = todoInput.value.trim();
+                const priority = document.querySelector('input[name="priority"]:checked').value;
+                if (title) {
+                    addTodo(title, priority);
+                    todoInput.value = '';
+                }
+            });
+
+            // フィルター切り替え
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    filterBtns.forEach(b => {
+                        b.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+                        b.classList.add('text-slate-600');
+                    });
+                    btn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+                    btn.classList.remove('text-slate-600');
+                    currentFilter = btn.dataset.filter;
+                    renderTodos();
+                });
+            });
+
+            // 初期フィルターボタンのアクティブスタイル設定
+            document.querySelector('[data-filter="all"]').classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+
+            // 完了済みを一括削除
+            clearCompletedBtn.addEventListener('click', () => {
+                todos = todos.filter(t => !t.completed);
+                saveTodos();
+                renderTodos();
+            });
+        }
+
+        // タスクの追加
+        function addTodo(title, priority) {
+            const newTodo = {
+                id: Date.now().toString(),
+                title: title,
+                completed: false,
+                priority: priority,
+                createdAt: new Date().toISOString()
+            };
+            todos.unshift(newTodo);
+            saveTodos();
+            renderTodos();
+        }
+
+        // 完了状態のトグル
+        function toggleTodo(id) {
+            todos = todos.map(todo => {
+                if (todo.id === id) {
+                    return { ...todo, completed: !todo.completed };
+                }
+                return todo;
+            });
+            saveTodos();
+            renderTodos();
+        }
+
+        // タスクの削除
+        function deleteTodo(id) {
+            todos = todos.filter(todo => todo.id !== id);
+            saveTodos();
+            renderTodos();
+        }
+
+        // ローカルストレージに保存
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        // 優先度に応じたバッジスタイルの取得
+        function getPriorityBadge(priority) {
+            switch (priority) {
+                case 'high':
+                    return '<span class="px-2 py-0.5 text-[10px] rounded font-medium bg-rose-50 text-rose-600 border border-rose-100">高</span>';
+                case 'medium':
+                    return '<span class="px-2 py-0.5 text-[10px] rounded font-medium bg-amber-50 text-amber-600 border border-amber-100">中</span>';
+                case 'low':
+                    return '<span class="px-2 py-0.5 text-[10px] rounded font-medium bg-emerald-50 text-emerald-600 border border-emerald-100">低</span>';
+                default:
+                    return '';
+            }
+        }
+
+        // 進捗状況の更新
+        function updateProgress() {
+            const total = todos.length;
+            const completed = todos.filter(t => t.completed).length;
+            const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+            progressPercent.textContent = `${percentage}%`;
+            progressCircle.setAttribute('stroke-dasharray', `${percentage}, 100`);
+            progressText.textContent = `${completed} / ${total} 完了`;
+
+            // モチベーションメッセージの更新
+            if (total === 0) {
+                motivationalMsg.textContent = 'タスクを追加しましょう';
+            } else if (percentage === 100) {
+                motivationalMsg.textContent = '素晴らしい！全て完了しました🎉';
+            } else if (percentage >= 50) {
+                motivationalMsg.textContent = '順調に進んでいます！';
+            } else {
+                motivationalMsg.textContent = 'ひとつずつ片付けましょう！';
+            }
+        }
+
+        // レンダリング処理
+        function renderTodos() {
+            // フィルタリング
+            const filteredTodos = todos.filter(todo => {
+                if (currentFilter === 'active') return !todo.completed;
+                if (currentFilter === 'completed') return todo.completed;
+                return true;
+            });
+
+            // リストのクリア
+            todoList.innerHTML = '';
+
+            // 空状態のチェック
+            if (filteredTodos.length === 0) {
+                emptyState.classList.remove('hidden');
+                const emptyTitle = document.getElementById('empty-title');
+                const emptyDesc = document.getElementById('empty-desc');
+
+                if (currentFilter === 'active') {
+                    emptyTitle.textContent = '未完了のタスクはありません';
+                    emptyDesc.textContent = '順調です！すべて完了しています。';
+                } else if (currentFilter === 'completed') {
+                    emptyTitle.textContent = '完了したタスクはありません';
+                    emptyDesc.textContent = 'タスクを完了させてチェックを入れましょう。';
+                } else {
+                    emptyTitle.textContent = 'タスクはありません';
+                    emptyDesc.textContent = '新しいタスクを追加して一日をスタートしましょう！';
+                }
+            } else {
+                emptyState.classList.add('hidden');
+
+                // 要素の追加
+                filteredTodos.forEach(todo => {
+                    const li = document.createElement('li');
+                    li.className = `task-enter flex items-center justify-between p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-sm hover:shadow transition-all group ${todo.completed ? 'bg-slate-50/70 border-slate-200' : ''}`;
+
+                    li.innerHTML = `
+                        <div class="flex items-center gap-3 min-w-0 pr-2">
+                            <button 
+                                onclick="toggleTodo('${todo.id}')"
+                                class="w-5 h-5 rounded-full border flex items-center justify-center transition-all shrink-0 ${todo.completed ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 hover:border-indigo-500 text-transparent'}"
+                                aria-label="タスクの完了切り替え"
+                            >
+                                <i class="fa-solid fa-check text-[10px]"></i>
+                            </button>
+                            <span class="text-sm text-slate-700 truncate ${todo.completed ? 'line-through text-slate-400' : ''}">
+                                ${escapeHtml(todo.title)}
+                            </span>
+                            ${getPriorityBadge(todo.priority)}
+                        </div>
+                        <button 
+                            onclick="deleteTodo('${todo.id}')"
+                            class="text-slate-300 hover:text-rose-500 p-1 rounded-lg transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 shrink-0"
+                            aria-label="タスクの削除"
+                        >
+                            <i class="fa-regular fa-trash-can text-sm"></i>
+                        </button>
+                    `;
+                    todoList.appendChild(li);
+                });
+            }
+
+            updateProgress();
+        }
+
+        // HTMLエスケープ処理（XSS対策）
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // 起動処理
+        window.onload = init;
+    </script>
+</body>
+</html>
